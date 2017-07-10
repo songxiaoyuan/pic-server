@@ -1,0 +1,49 @@
+<body>
+    <div>
+        <p>用户名: <input type="text" id="username" /></p>
+    </div>
+    <div>
+        <p>密码: <input type="password" id="pwd" /></p>
+    </div>
+    <div>
+        <p>刷新数字: <input type="text" id="mynum" /></p>
+    </div>
+    <input type="button" value="提交" onclick="SubmitForm();"/>
+    <input type="button" value="刷新" onclick="UpdateNum();"/>
+    <script src="/static/jquery-3.2.1.min.js"></script>
+    <script>
+        window.onload = function(){
+            //页面加载即执行函数
+            UpdateNum();
+        }
+        function SubmitForm(){
+            $.ajax({
+                url:'/ajax_demo/ajax_demo',
+                type:'POST',
+                data:{'user':$('#username').val(),'pwd':$('#pwd').val()},
+                dataType:'json',
+                success:function(data){
+                    if(data.status){
+                        location.href="http://www.baidu.com";
+                    }
+                    else{
+                        alert(data.message)
+                    }
+                }
+            })
+        }
+        function UpdateNum(){
+            $.ajax({
+                url:'/random/UpdateNum',
+                type:'POST',
+                data:{'mynum':$('#mynum').val()},
+                dataType:'json',
+                success:function(data){
+                    document.getElementById("mynum").value=data.returnnum;
+                }
+            })
+            window.setTimeout("UpdateNum()", 500); 
+        }
+    </script>
+
+</body>
