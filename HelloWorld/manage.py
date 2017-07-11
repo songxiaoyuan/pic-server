@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 import os
 import sys
+# import test
+
+
 
 if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "HelloWorld.settings")
@@ -19,4 +22,6 @@ if __name__ == "__main__":
                 "forget to activate a virtual environment?"
             )
         raise
+    # print "this is in test"
+    # print id(test._g)
     execute_from_command_line(sys.argv)

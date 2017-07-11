@@ -3,10 +3,10 @@ from django.http import HttpResponse
 from django.shortcuts import render
 import json
 import random
-import test
+import getMdData
 
-print "this is in view"
-print id(test._g)
+# print "this is in view"
+# print id(test._g)
 
 def hello(request):
     context          = {}
@@ -28,12 +28,27 @@ def ajax_demo(request):
     return render(request,'ajax_demo.html')
 
 def UpdateNum(request):
-    print "has come here"
+    # print "has come here"
     if request.method == 'POST':
         ret = {'returnnum':1}
-        print(request.POST.get('mynum'))
+        # print(request.POST.get('mynum'))
         p_num=random.uniform(10, 20)
         ret['returnnum'] = p_num
-        print ("random num is  ",p_num)
+        # print ("random num is  ",p_num)
         return HttpResponse(json.dumps(ret))
     return render(request,'ajax_demo.html')
+
+def UpdateMdData(request):
+    # print getMdData._mdData
+    # print "has come here"
+    if request.method == 'POST':
+        ret = {'data':""}
+        instrument = request.POST.get('instrumentid').decode("utf-8")
+        print instrument
+        if getMdData._mdData ==None:
+            print "this is noe"
+        if instrument in getMdData._mdData:
+            ret["data"] = getMdData._mdData[instrument]
+        # print ("random num is  ",p_num)
+        return HttpResponse(json.dumps(ret))
+    return render(request,'show_band.html')

@@ -21,4 +21,5 @@ urlpatterns = [
     url(r'^hello/', view.hello),
     url(r'^ajax_demo/',view.ajax_demo),
     url(r'^random/',view.UpdateNum),
+    url(r'^update/',view.UpdateMdData),
 ]

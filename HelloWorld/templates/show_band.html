@@ -1,0 +1,215 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<script src="/static/echarts.min.js"></script>
+	<script src="/static/jquery-3.2.1.min.js"></script>
+</head>
+
+<body style="width: 100%;height:100%;">
+<div>
+<br>
+<br>
+<br>
+<br>
+
+<div id="banddrawing" style="width: 2000px;height:500px;"></div>
+
+<script type="text/javascript">
+
+        var band_myChart = echarts.init(document.getElementById('banddrawing'));
+
+        // COMPXAVENUM = 10
+        // 得到具体的标题数据，和对应的标题数据的具体的数。
+        MIN=100000
+        MAX=0
+
+        band_legend_nums = []
+        band_legend_data= []
+        // 用来保存线的具体的数据。是一个数组，就是echart的band_series_data
+        // 他们的顺序是lastprice，middle，+0.5，-0.5，+1，-1等一次类推
+        band_series_data =[]
+        // 用来保存时间的数组，以后就是图片的横坐标轴。
+        times_array= []
+        rsi_times_array =[]
+        sd_array=[]
+        sd_lastprice_array =[]
+        rsi_array = []
+        rsi_array_3 = []
+        diff_volume_array = []
+        diff_volume_times_array =[]
+        //用来保存lastprice的数据，因为如果没有到达周期的话，这些都需要先保存着，然后等到达周期之后在计算
+        LASTPRICEARRAY= []
+
+        openinterest_array = []
+        spread_array =[]
+
+        ema_openinterest_array =[]
+        ema_diff_volume_array =[]
+
+
+
+
+        band_option = {
+            toolbox: {
+                show : true,
+                feature : {
+                    mark : {show: true},
+                    dataView : {show: true, readOnly: false},
+                    magicType : {show: true, type: ['line', 'bar']},
+                    restore : {show: true},
+                    saveAsImage : {show: true}
+                }
+            },
+            tooltip : {
+                trigger: 'axis'
+            },
+            title: {
+                text: 'bollinger band'
+            },
+            legend: {
+                // data:['邮件营销','联盟广告','视频广告','直接访问','搜索引擎']
+            },
+            xAxis: {
+                type: 'category',
+                // data: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+            },
+            yAxis: {
+                min:MIN,
+                max:MAX,
+                type: 'value'
+            },         
+        };
+
+        window.onload = function(){
+            //页面加载即执行函数
+            UpdateData();
+        }
+
+        function UpdateData(){
+            $.ajax({
+                url:'/update/',
+                type:'POST',
+                data:{'instrumentid':"rb1710"},
+                dataType:'json',
+                success:function(data){
+                    // document.getElementById("mynum").value=data.returnnum;
+                    startdraw(data["data"])
+                }
+            })
+            window.setTimeout("UpdateData()", 10000); 
+        }
+
+
+        // 根据input的file标签读取出相对应的csv的数据。
+        // 首先有一个问题就是因为是针对一个合约的数据，所以不存在对其的问题，那么数据还需不需要补充。
+        // 如果数据库中的数据，就是接受到的行情的本身的数据，那么就不需要补充，直接去除非交易时间的，直接用就可以了。
+        // 补充的话，还会影响最后的效果。
+
+        // 得到标题的参数和具体的每一个series
+        function getLegendAndband_series_data(){
+            var SD = "0.5,1,3" //画线的md参数
+            var sds =SD.split(',')
+
+            band_legend_data.push("lastprice")
+            band_legend_nums.push(0)
+            tmpobjlastprice = {}
+            tmpobjlastprice.name = "lastprice"
+            tmpobjlastprice.type = "line"
+            tmpobjlastprice.data = []
+            band_series_data.push(tmpobjlastprice)
+
+            band_legend_data.push('middle')
+            band_legend_nums.push(0)
+            tmpobj = {}
+            tmpobj.name = "middle"
+            tmpobj.type = "line"
+            tmpobj.data = []
+            band_series_data.push(tmpobj)
+
+
+            for (var i = 0; i < sds.length; i++) {
+                band_legend_data.push('+'+sds[i]) 
+                band_legend_nums.push(Number(sds[i]))
+                tmpobj = {}
+                tmpobj.name= '+'+sds[i]
+                tmpobj.type = "line"
+                tmpobj.data = []
+                band_series_data.push(tmpobj)
+
+                band_legend_data.push('-'+sds[i]) 
+                band_legend_nums.push(0-Number(sds[i]))
+                tmpobjneg = {}
+                tmpobjneg.name= '-'+sds[i]
+                tmpobjneg.type = "line"
+                tmpobjneg.data = []
+                band_series_data.push(tmpobjneg)
+            }
+        }
+
+        // 根据传入的参数进行画图，
+        function startdraw(data){
+            // 首先确定一些基本的参数。确定要选择的几条线，然后和周期的评价指标，ema还是ma。
+            // getLegendAndband_series_data()
+            // console.log(data)
+            // console.log(band_series_data)
+            band_series_data =[]
+            // // 用来保存时间的数组，以后就是图片的横坐标轴。
+            times_array= []
+            getLegendAndband_series_data()
+
+            for (var i = 0; i < data.length; i++) {
+                var linedata = data[i]
+                // 首先判断是不是已经达到我们所需要的周期了，如果还没有达到，那么就继续等着，不然就开始计算数据。
+                var time = linedata[3]
+                var lastprice = Number(linedata[0])
+                var middle = Number(linedata[1])
+                var sd = Number(linedata[2])
+                    
+                if (lastprice==NaN) {
+                    break
+                }
+                    
+                times_array.push(time)
+
+
+                if (MIN > lastprice) {
+                    MIN = lastprice
+                }
+                if (MAX < lastprice) {
+                    MAX = lastprice
+                }
+
+                band_series_data[0].data.push(lastprice)
+
+                // 在各个线里面插入数据。用来显示所用。
+                for (var j = 1; j < band_series_data.length; j++) {
+                    var num = middle + band_legend_nums[j]*(sd)
+                    // console.log(num)
+                    // console.log(typeof(num))
+                    if (MIN > num) {
+                        MIN = num
+                    }
+                    if (MAX < num) {
+                        MAX = num
+                    }
+                    band_series_data[j].data.push(num)
+                }
+            }
+
+            band_option.legend.data = band_legend_data
+            band_option.series = band_series_data
+            // console.log(band_legend_data)
+
+            band_option.yAxis.min = MIN
+            band_option.yAxis.max = MAX
+            band_option.xAxis.data = times_array
+
+            band_myChart.setOption(band_option);
+        }
+        band_myChart.setOption(band_option);
+</script>
+
+</div>
+
+</body>
+</html>
