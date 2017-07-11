@@ -1,6 +1,7 @@
-import test
+# import test
 
-data = test.getDict()
+# data = test.getDict()
 
-print id(test._g)
-print id(data)
+# print "this is in init"
+# print id(test._g)
+# print id(data)

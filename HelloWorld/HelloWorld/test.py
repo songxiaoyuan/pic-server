@@ -8,13 +8,16 @@ from subprocess import Popen,PIPE
 def GetMDData(dic):
 	# print "start to get the md data and insert to the dic"
 	print "this is init"
-	path = os.getcwd()+ "\md\mdBasic.exe"
+	# path = os.getcwd()+ "\md\mdBasic.exe"
+	path = os.getcwd()+ "\md\\test.exe"
 	p = Popen(path,stdout = PIPE,bufsize =10000)
+	print "has start the exe"
 	for line in iter(p.stdout.readline,''):
 		line = line.split(",")
+		print line
 		if len(line) ==9:
 			instrumentId = line[1].strip()
-			# print instrumentId
+			print instrumentId
 			if instrumentId in dic:
 				dic[instrumentId].append(line)
 			else:
@@ -32,9 +35,10 @@ try:
 	if _g is None:
 		print "this is called  first" 
 		_g = dict()
-	brusher = threading.Thread(target=GetMDData,args=(_g,))
-	brusher.setDaemon(True)
-	brusher.start()
-	brusher.join()
+		brusher = threading.Thread(target=GetMDData,args=(_g,))
+		brusher.setDaemon(True)
+		brusher.start()
+		brusher.join()
+		# GetMDData(_g)
 except:
     pass

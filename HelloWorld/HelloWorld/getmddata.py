@@ -5,7 +5,8 @@ from subprocess import Popen,PIPE
 
 def GetMDData(dic):
 	# print "start to get the md data and insert to the dic"
-	path = os.getcwd()+ "\md\mdBasic.exe"
+	# path = os.getcwd()+ "\md\mdBasic.exe"
+	path = os.getcwd()+ "\md\\test.exe"
 	p = Popen(path,stdout = PIPE,bufsize =10000)
 	for line in iter(p.stdout.readline,''):
 		line = line.split(",")

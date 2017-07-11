@@ -3,6 +3,10 @@ from django.http import HttpResponse
 from django.shortcuts import render
 import json
 import random
+import test
+
+print "this is in view"
+print id(test._g)
 
 def hello(request):
     context          = {}
