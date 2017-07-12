@@ -18,8 +18,9 @@ from django.conf.urls import url
 from . import view
  
 urlpatterns = [
-    url(r'^hello/', view.hello),
+    url(r'^$', view.index),
+    url(r'^hello/$', view.hello),
     url(r'^ajax_demo/',view.ajax_demo),
     url(r'^random/',view.UpdateNum),
-    url(r'^update/',view.UpdateMdData),
+    url(r'^update/$',view.UpdateMdData),
 ]

@@ -20,7 +20,7 @@ AskPrice1 =8
 
 def GetMDData(dic):
 	# print "start to get the md data and insert to the dic"
-	# print "this is init"
+	print "starting to start the mdBasic.exe"
 	param_dict = {"limit_max_profit":25,"limit_max_loss":10,"rsi_bar_period":120
 				,"limit_rsi_data":80,"rsi_period":14
 				,"band_open_edge":0.5,"band_loss_edge":1,"band_profit_edge":3,"band_period":3600
@@ -32,7 +32,7 @@ def GetMDData(dic):
 	path = os.getcwd()+ "\md\mdBasic.exe"
 	# path = os.getcwd()+ "\md\\test.exe"
 	p = Popen(path,stdout = PIPE,bufsize =10000)
-	# print "has start the exe"
+	print "the mdBasic.exe has been  started"
 	for line in iter(p.stdout.readline,''):
 		line = line.split(",")
 		# print line
@@ -42,7 +42,7 @@ def GetMDData(dic):
 			instrumentId = line[InstrumentID].strip()
 			if instrumentId not in objDict:
 				objDict[instrumentId] = band_and_trigger.BandAndTrigger(param_dict)
-			# print instrumentId
+			print instrumentId
 			ret_array = objDict[instrumentId].get_md_data(line)
 			if instrumentId in dic:
 				dic[instrumentId].append(ret_array)
@@ -54,18 +54,19 @@ def GetMDData(dic):
 def getDict():
 	return _mdData
 
+print "this is the init function. start the mdBasic.exe"
 import socket,sys
 s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 try:
-	s.bind(('127.0.0.1',8999))
+	s.bind(('127.0.0.1',9000))
 	print "this is called  first"
 	if _mdData is None:
-		print "this _mdData is none" 
+		print "this _mdData is none and start to init it" 
 		_mdData = dict()
 		brusher = threading.Thread(target=GetMDData,args=(_mdData,))
 		brusher.setDaemon(True)
 		brusher.start()
-		# brusher.join()
-		# GetMDData(_mdData)
+	else:
+		print "the _mdData is not none"
 except:
-    print "not bind??"
+    print "the sortket has been bind"

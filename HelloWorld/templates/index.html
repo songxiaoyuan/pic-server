@@ -1,0 +1,39 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<script src="/static/jquery-3.2.1.min.js"></script>
+</head>
+
+<body style="width: 100%;height:100%;">
+<div>
+<br>
+<br>
+<br>
+<br>
+
+<div id="urlButtonS_div" style="float: left;width: 200px;height: 1000px"></div>
+
+<script type="text/javascript">
+    var data = {{ data|safe }}
+    for(var tmp in data){
+    	var url_a = $('<a>',{
+    		'target':'_blank',
+    		'href':"http://127.0.0.1:8001/update/?instrumentid="+tmp
+    	});
+    	var a_button = $("<button>",{
+    		'width':'200px',
+    		'height':'100px',
+    		'text':tmp
+    	})
+    	url_a.append(a_button)
+    	$("#urlButtonS_div").append(url_a)
+    	$("#urlButtonS_div").append('<br>')
+    	// console.log(tmp)
+    	// console.log(data[tmp])
+    }
+</script>
+
+</div>
+
+</body>
+</html>

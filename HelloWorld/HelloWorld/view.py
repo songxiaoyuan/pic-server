@@ -8,6 +8,15 @@ import getMdData
 # print "this is in view"
 # print id(test._g)
 
+def index(request):
+    context          = {}
+    if getMdData._mdData ==None:
+        context["data"]={"has instrumentid":[]}
+    else:
+        context["data"] = getMdData._mdData
+    # print context
+    return render(request, 'index.html', context)
+
 def hello(request):
     context          = {}
     context['hello'] = 'Hello World!'
@@ -39,16 +48,22 @@ def UpdateNum(request):
     return render(request,'ajax_demo.html')
 
 def UpdateMdData(request):
-    # print getMdData._mdData
-    # print "has come here"
+    # base the url to get the instrumentid
+    if request.method == 'GET':
+        instrumentid = request.GET.get('instrumentid')
+        # print instrumentid
+        ret = {}
+        ret["instrumentid"] = instrumentid
+        return render(request,'show_band.html',ret)
     if request.method == 'POST':
+        # this is the ajax ,return the dict data
         ret = {'data':""}
+        # print "this is post"
         instrument = request.POST.get('instrumentid').decode("utf-8")
         print instrument
         if getMdData._mdData ==None:
-            print "this is noe"
-        if instrument in getMdData._mdData:
+            print "the md data is  none, please find the reason"
+        elif instrument in getMdData._mdData:
             ret["data"] = getMdData._mdData[instrument]
-        # print ("random num is  ",p_num)
         return HttpResponse(json.dumps(ret))
     return render(request,'show_band.html')

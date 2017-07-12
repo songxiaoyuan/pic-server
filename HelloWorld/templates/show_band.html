@@ -80,6 +80,8 @@
             },         
         };
 
+        var instrumentid = "{{ instrumentid|safe }}"
+
         window.onload = function(){
             //页面加载即执行函数
             UpdateData();
@@ -89,7 +91,7 @@
             $.ajax({
                 url:'/update/',
                 type:'POST',
-                data:{'instrumentid':"rb1710"},
+                data:{'instrumentid':instrumentid},
                 dataType:'json',
                 success:function(data){
                     // document.getElementById("mynum").value=data.returnnum;
@@ -100,7 +102,6 @@
         }
 
 
-        // 根据input的file标签读取出相对应的csv的数据。
         // 首先有一个问题就是因为是针对一个合约的数据，所以不存在对其的问题，那么数据还需不需要补充。
         // 如果数据库中的数据，就是接受到的行情的本身的数据，那么就不需要补充，直接去除非交易时间的，直接用就可以了。
         // 补充的话，还会影响最后的效果。
