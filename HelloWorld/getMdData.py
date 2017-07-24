@@ -105,8 +105,8 @@ def GetMDData(dic):
 	p = Popen(path,stdout = PIPE,bufsize =10000)
 	print "the mdBasic.exe has been  started"
 	print "starting to start the mdBasic.exe"
-	param_dict = {"limit_max_profit":25,"limit_max_loss":10,"rsi_bar_period":120
-				,"limit_rsi_data":80,"rsi_period":14
+	param_dict = {"limit_max_profit":25,"limit_max_loss":10,"rsi_bar_period":100
+				,"limit_rsi_data":80,"rsi_period":10
 				,"band_open_edge":0.5,"band_loss_edge":1,"band_profit_edge":3,"band_period":3600
 				,"volume_open_edge":900,"limit_max_draw_down":0,"multiple":10,"file":file
 				,"sd_lastprice":100,"open_interest_edge":0,"spread":100}
@@ -115,10 +115,14 @@ def GetMDData(dic):
 	objDict = {}
 	for line  in sqlData:
 		instrumentId = line[InstrumentID].strip()
+		if "SP" in instrumentId:
+			continue
 		if instrumentId not in objDict:
 			objDict[instrumentId] = band_and_trigger.BandAndTrigger(param_dict)
 		# print instrumentId
 		ret_array = objDict[instrumentId].get_md_data(line)
+		if len(ret_array) ==0:
+			continue
 		if instrumentId in dic:
 			dic[instrumentId].append(ret_array)
 		else:
@@ -136,6 +140,8 @@ def GetMDData(dic):
 				objDict[instrumentId] = band_and_trigger.BandAndTrigger(param_dict)
 			# print instrumentId
 			ret_array = objDict[instrumentId].get_md_data(line)
+			if len(ret_array) ==0:
+				continue
 			if instrumentId in dic:
 				dic[instrumentId].append(ret_array)
 			else:

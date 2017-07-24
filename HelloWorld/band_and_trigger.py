@@ -118,8 +118,9 @@ class BandAndTrigger(object):
 			self._now_sd_val =bf.get_sd_data(self._now_md_price[UpdateTime], self._lastprice_array,ema_period)
 			# save the pre_ema_val and return
 			# return True
-			ret = [self._now_md_price[LastPrice],self._pre_ema_val,self._now_sd_val,self._now_md_price[UpdateTime]]
-			return ret
+			# ret = [self._now_md_price[LastPrice],self._pre_ema_val,self._now_sd_val,self._now_md_price[UpdateTime],self._ris_data]
+			# return ret
+			return []
 
 		# start the judge
 		if self._moving_theo =="EMA":
@@ -140,7 +141,8 @@ class BandAndTrigger(object):
 		# spread = 100*(self._pre_md_price[ASKPRICE1] - avg_price)/(self._pre_md_price[ASKPRICE1] - self._pre_md_price[BIDPRICE1])
 
 
-		ret = [self._now_md_price[LastPrice],self._now_middle_value,self._now_sd_val,self._now_md_price[UpdateTime]]
+		ret = [self._now_md_price[LastPrice],self._now_middle_value
+				,self._now_sd_val,self._now_md_price[UpdateTime],self._ris_data]
 		return ret
 
 

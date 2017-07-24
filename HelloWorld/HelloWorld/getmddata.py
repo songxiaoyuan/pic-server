@@ -13,9 +13,11 @@ def GetMDData(dic):
 		if len(line) ==9:
 			instrumentId = line[1].strip()
 			# print instrumentId
+			if "SP" in instrumentId:
 			if instrumentId in dic:
 				dic[instrumentId].append(line)
 			else:
+				print instrumentId
 				dic[instrumentId] = [line]
 	p.stdout.close()
 	p.terminate()

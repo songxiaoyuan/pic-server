@@ -13,10 +13,12 @@
 <br>
 
 <div id="banddrawing" style="width: 2000px;height:500px;"></div>
+<div id="rsidrawing" style="width: 2000px;height:500px;"></div>
 
 <script type="text/javascript">
 
         var band_myChart = echarts.init(document.getElementById('banddrawing'));
+        var rsi_myChart = echarts.init(document.getElementById('rsidrawing'));
 
         // COMPXAVENUM = 10
         // 得到具体的标题数据，和对应的标题数据的具体的数。
@@ -80,6 +82,41 @@
             },         
         };
 
+        rsi_option = {
+            toolbox: {
+                show : true,
+                feature : {
+                    mark : {show: true},
+                    dataView : {show: true, readOnly: false},
+                    magicType : {show: true, type: ['line', 'bar']},
+                    restore : {show: true},
+                    saveAsImage : {show: true}
+                }
+            },
+            tooltip : {
+                trigger: 'axis'
+            },
+            title: {
+                text: 'rsi'
+            },
+            legend: {
+                data:['rsi']
+            },
+            xAxis: {
+                type: 'category',
+                // data: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series:[
+                {
+                    name:"rsi",
+                    type:"line",
+                }
+            ]         
+        };
+
         var instrumentid = "{{ instrumentid|safe }}"
 
         window.onload = function(){
@@ -108,7 +145,7 @@
 
         // 得到标题的参数和具体的每一个series
         function getLegendAndband_series_data(){
-            var SD = "0.5,1,3" //画线的md参数
+            var SD = "0.5,1,2,3" //画线的md参数
             var sds =SD.split(',')
 
             band_legend_data.push("lastprice")
@@ -156,6 +193,7 @@
             band_series_data =[]
             // // 用来保存时间的数组，以后就是图片的横坐标轴。
             times_array= []
+            rsi_array = []
             getLegendAndband_series_data()
 
             for (var i = 0; i < data.length; i++) {
@@ -165,13 +203,15 @@
                 var lastprice = Number(linedata[0])
                 var middle = Number(linedata[1])
                 var sd = Number(linedata[2])
+
+                var rsi = Number(linedata[4])
                     
                 if (lastprice==NaN) {
                     break
                 }
                     
                 times_array.push(time)
-
+                rsi_array.push(rsi)
 
                 if (MIN > lastprice) {
                     MIN = lastprice
@@ -205,9 +245,14 @@
             band_option.yAxis.max = MAX
             band_option.xAxis.data = times_array
 
+            rsi_option.xAxis.data = times_array
+            rsi_option.series[0].data = rsi_array
+
             band_myChart.setOption(band_option);
+            rsi_myChart.setOption(rsi_option);
         }
         band_myChart.setOption(band_option);
+        rsi_myChart.setOption(rsi_option);
 </script>
 
 </div>
