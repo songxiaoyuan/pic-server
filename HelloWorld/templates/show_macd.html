@@ -1,0 +1,117 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<script src="/static/echarts.min.js"></script>
+	<script src="/static/jquery-3.2.1.min.js"></script>
+</head>
+
+<body style="width: 100%;height:100%;">
+<div>
+<br>
+<br>
+<br>
+<br>
+
+<div id="macddrawing" style="width: 2000px;height:500px;"></div>
+
+<script type="text/javascript">
+
+        var macd_myChart = echarts.init(document.getElementById('macddrawing'))
+
+        macd_option = {
+            toolbox: {
+                show : true,
+                feature : {
+                    mark : {show: true},
+                    dataView : {show: true, readOnly: false},
+                    magicType : {show: true, type: ['line', 'bar']},
+                    restore : {show: true},
+                    saveAsImage : {show: true}
+                }
+            },
+            tooltip : {
+                trigger: 'axis'
+            },
+            title: {
+                text: 'macd'
+            },
+            legend: {
+                data:['macd1',"macd2"]
+            },
+            xAxis: {
+                type: 'category',
+                // data: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series:[
+                {
+                    name:"macd1",
+                    type:"line",
+                },
+                 {
+                    name:"macd2",
+                    type:"line",
+                }
+            ]         
+        };
+
+        var instrumentid = "{{ instrumentid|safe }}"
+
+        window.onload = function(){
+            //页面加载即执行函数
+            UpdateData();
+        }
+
+        function UpdateData(){
+            $.ajax({
+                url:'/macd/',
+                type:'POST',
+                data:{'instrumentid':instrumentid},
+                dataType:'json',
+                success:function(data){
+                    // document.getElementById("mynum").value=data.returnnum;
+                    startdraw(data["data"])
+                }
+            })
+            window.setTimeout("UpdateData()", 10000); 
+        }
+
+        // 根据传入的参数进行画图，
+        function startdraw(data){
+            band_series_data =[]
+            // // 用来保存时间的数组，以后就是图片的横坐标轴。
+            macd_times_array=[]
+            macd_data_array1=[]
+            macd_data_array2=[]
+
+            for (var i = 0; i < data.length; i++) {
+                var linedata = data[i]
+                // 首先判断是不是已经达到我们所需要的周期了，如果还没有达到，那么就继续等着，不然就开始计算数据。
+                var time = linedata[0]
+                var macd1 = Number(linedata[1])
+                var macd2 = Number(linedata[2])
+
+                if (time==NaN) {
+                    break
+                }
+                
+                macd_times_array.push(time)
+                macd_data_array1.push(macd1)
+                macd_data_array2.push(macd2)
+            }
+                
+            macd_option.xAxis.data = macd_times_array
+            macd_option.series[0].data = macd_data_array1
+            macd_option.series[1].data = macd_data_array2
+
+            macd_myChart.setOption(macd_option);
+        }
+        macd_myChart.setOption(macd_option);
+</script>
+
+</div>
+
+</body>
+</html>

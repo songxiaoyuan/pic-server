@@ -19,8 +19,10 @@ from . import view
  
 urlpatterns = [
     url(r'^$', view.index),
+    url(r'^getmacd/$', view.index_macd),
     url(r'^hello/$', view.hello),
     url(r'^ajax_demo/',view.ajax_demo),
     url(r'^random/',view.UpdateNum),
     url(r'^update/$',view.UpdateMdData),
+    url(r'^macd/$',view.UpdateMACDData),
 ]
