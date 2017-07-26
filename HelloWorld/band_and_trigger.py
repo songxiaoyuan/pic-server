@@ -21,9 +21,15 @@ class BandAndTrigger(object):
 		self._pre_md_price = []
 		self._now_md_price = []
 		self._lastprice_array = []
+		self._lastprice_map = dict()
 		self._pre_ema_val = 0
 		self._now_middle_value =0
 		self._now_sd_val = 0
+
+		self._diff_volume_array = []
+		self._diff_open_interest_array = []
+		self._diff_spread_array = []
+		self._diff_period =param_dic["diff_period"]
 
 		self._max_profit = 0
 		self._limit_max_draw_down = param_dic["limit_max_draw_down"]
@@ -33,9 +39,9 @@ class BandAndTrigger(object):
 		self._multiple = param_dic["multiple"]
 
 		self._rsi_array = []
-		self._rsi_period = param_dic["rsi_period"]
 		self._pre_rsi_lastprice =0 
 		self._now_bar_rsi_tick = 0
+		self._rsi_period = param_dic["rsi_period"]
 		self._rsi_bar_period = param_dic["rsi_bar_period"]
 		self._limit_rsi_data = param_dic["limit_rsi_data"]
 
@@ -67,10 +73,29 @@ class BandAndTrigger(object):
 		self._profit = 0
 		self._ris_data = 0
 
-		self._sd_lastprice = param_dic["sd_lastprice"]
 
 		self._file = param_dic["file"]
+		self._config_file = param_dic["config_file"]
 
+		if len(self._lastprice_array) ==0:
+			print "this is init function"
+			tmp_pre_ema_array = []
+			tmp_rsi_lastprice = []
+			config_file = "./config_server/"+str(self._config_file)
+			bf.get_config_info(tmp_pre_ema_array,self._lastprice_array,self._lastprice_map
+				,self._rsi_array,tmp_rsi_lastprice,config_file)
+			if len(tmp_pre_ema_array)==0:
+				self._pre_ema_val = 0
+				self._pre_rsi_lastprice = 0 
+			else:
+				self._pre_ema_val = tmp_pre_ema_array[0]
+				self._pre_rsi_lastprice = tmp_rsi_lastprice[0]
+
+
+	def __del__(self):
+		print "this is the over function"
+		# bf.write_config_info(self._pre_ema_val,self._lastprice_array
+		# 	,self._rsi_array,self._rsi_period,self._now_md_price[LASTPRICE],self._config_file)
 
 	# get the md data ,every line;
 	def get_md_data(self,md_array):
@@ -87,10 +112,9 @@ class BandAndTrigger(object):
 		self._now_md_price = md_array
 
 		lastprice = self._now_md_price[LastPrice]
-		self._lastprice_array.append(lastprice)
 		# print lastprice
 
-		if len(self._pre_md_price) ==0:
+		if self._pre_rsi_lastprice <=0:
 			self._rsi_array.append(0)
 			self._pre_rsi_lastprice = lastprice
 			self._ris_data = -1
@@ -110,17 +134,28 @@ class BandAndTrigger(object):
 				self._ris_data =bf.get_rsi_data2(tmpdiff,self._rsi_array,self._rsi_period)
 				# self._ris_data = 0
 
-		if len(self._lastprice_array)-1 < self._param_period:
+		self._lastprice_array.append(lastprice)
+		if len(self._lastprice_array) < self._param_period:
 			# this is we dont start the period.
 			ema_period = len(self._lastprice_array)
 			pre_ema_val = bf.get_ema_data(lastprice,self._pre_ema_val,ema_period)
 			self._pre_ema_val = pre_ema_val
-			self._now_sd_val =bf.get_sd_data(self._now_md_price[UpdateTime], self._lastprice_array,ema_period)
 			# save the pre_ema_val and return
-			# return True
-			# ret = [self._now_md_price[LastPrice],self._pre_ema_val,self._now_sd_val,self._now_md_price[UpdateTime],self._ris_data]
-			# return ret
+			if lastprice not in self._lastprice_map:
+				self._lastprice_map[lastprice] =1
+			else:
+				self._lastprice_map[lastprice] +=1
 			return []
+
+		front_lastprice = self._lastprice_array[0]
+		self._lastprice_array.pop(0)
+		if front_lastprice != lastprice:
+			if lastprice not in self._lastprice_map :
+				self._lastprice_map[lastprice] = 1
+			else:
+				self._lastprice_map[lastprice] +=1
+
+			self._lastprice_map[front_lastprice] -=1
 
 		# start the judge
 		if self._moving_theo =="EMA":
@@ -129,23 +164,12 @@ class BandAndTrigger(object):
 		else:
 			self._now_middle_value = bf.get_ma_data(self._lastprice_array,self._param_period)
 		
-		self._now_sd_val =bf.get_sd_data(self._now_md_price[UpdateTime],self._lastprice_array,self._param_period)	
-		
-		# diff_volume = self._now_md_price[VOLUME] - self._pre_md_price[VOLUME]
-		# diff_openinterest = self._now_md_price[OPENINTEREST] - self._pre_md_price[OPENINTEREST]
-
-		# # self.f.write(str(self._now_md_price[TIME])+","+str(lastprice)+","+str(self._now_middle_value)+","+str(self._now_sd_val)+","+str(self._ris_data)+"\n")
-		# diff_turnover = self._now_md_price[TURNONER] - self._pre_md_price[TURNONER]
-
-		# avg_price = float(diff_turnover)/diff_volume/self._multiple
-		# spread = 100*(self._pre_md_price[ASKPRICE1] - avg_price)/(self._pre_md_price[ASKPRICE1] - self._pre_md_price[BIDPRICE1])
-
-
+		# self._now_sd_val =bf.get_sd_data(self._now_md_price[TIME], self._lastprice_array,self._param_period)			
+		self._now_sd_val =bf.get_sd_data_by_map(self._lastprice_map,self._param_period)	
+		# self.f.write(str(self._now_md_price[TIME])+","+str(lastprice)+","+str(self._now_middle_value)+","+str(self._now_sd_val)+","+str(self._ris_data)+"\n")
 		ret = [self._now_md_price[LastPrice],self._now_middle_value
 				,self._now_sd_val,self._now_md_price[UpdateTime],self._ris_data]
 		return ret
-
-
 
 
 if __name__=='__main__': 

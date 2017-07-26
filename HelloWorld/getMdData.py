@@ -32,29 +32,70 @@ SQL_DATA = 0
 SQL_INSTRUMENT = 1
 
 
-def cleanMdData(data):
+# 这个是铅的
+param_dict_pb = {"limit_max_profit":125,"limit_max_loss":50,"rsi_bar_period":50
+			,"limit_rsi_data":75,"rsi_period":10,"diff_period":1
+			,"band_open_edge":0.5,"band_loss_edge":1,"band_profit_edge":3,"band_period":7200
+			,"volume_open_edge":20,"limit_max_draw_down":0,"multiple":5,"file":file
+			,"sd_lastprice":100,"open_interest_edge":0,"spread":100,"config_file":310}
+# 这个是螺纹钢的
+param_dict_rb = {"limit_max_profit":25,"limit_max_loss":10,"rsi_bar_period":100
+			,"limit_rsi_data":80,"rsi_period":10,"diff_period":1
+			,"band_open_edge":0.5,"band_loss_edge":1,"band_profit_edge":3,"band_period":7200
+			,"volume_open_edge":900,"limit_max_draw_down":0,"multiple":10,"file":file
+			,"sd_lastprice":100,"open_interest_edge":0,"spread":100,"config_file":321}
+
+# 这个是锌的
+param_dic_zn = {"limit_max_profit":125,"limit_max_loss":50,"rsi_bar_period":100
+			,"limit_rsi_data":80,"rsi_period":10,"diff_period":1
+			,"band_open_edge":0.5,"band_loss_edge":1,"band_profit_edge":3,"band_period":7200
+			,"volume_open_edge":100,"limit_max_draw_down":0,"multiple":5,"file":file
+			,"sd_lastprice":0,"open_interest_edge":0,"spread":100,"config_file":346}
+# 这个是橡胶的
+param_dic_ru = {"limit_max_profit":250,"limit_max_loss":100,"rsi_bar_period":100
+			,"limit_rsi_data":70,"rsi_period":10,"diff_period":1
+			,"band_open_edge":0.5,"band_loss_edge":1,"band_profit_edge":3,"band_period":7200
+			,"volume_open_edge":120,"limit_max_draw_down":0,"multiple":10,"file":file
+			,"sd_lastprice":0,"open_interest_edge":0,"spread":100,"config_file":334}
+
+nameDict = {
+	"rb1710":{"param":param_dict_rb},
+	"ru1709":{"param":param_dic_ru},
+	"zn1709":{"param":param_dic_zn},
+	"pb1709":{"param":param_dict_pb}
+}
+
+def getSortedData(data):
 	ret = []
-	amBegin = 9*3600
-	amEnd = 11*3600+30*60
-	pmBegin = 13*3600+30*60
-	pmEnd = 15*3600
-	amRestBegin = 10*3600+15*60
-	amRestEnd = 10*3600+30*60
+	night = []
+	zero = []
+	day = []
+	nightBegin = 21*3600
+	nightEnd = 23*3600+59*60+60
+	zeroBegin = 0
+	zeroEnd = 9*3600 - 100
+	dayBegin = 9*3600
+	dayEnd = 15*3600
 
 	for line in data:
 		# print line
 		timeLine = line[20].split(":")
 		# print timeLine
-		# tick = line[21]
 		nowTime = int(timeLine[0])*3600+int(timeLine[1])*60+int(timeLine[2])
-		# print nowTime
-		# print time
-		# import pdb
-		# pdb.set_trace()
-		if nowTime<amBegin:
-			continue
-		if nowTime>pmEnd:
-			break
+
+		if nowTime >= zeroBegin and nowTime <zeroEnd:
+			zero.append(line)
+		elif nowTime >= dayBegin and nowTime <= dayEnd:
+			day.append(line)
+		elif nowTime >=nightBegin and nowTime <=nightEnd:
+			night.append(line)
+		# if int(line[22]) ==0 or int(line[4]) ==3629:
+		# 	continue
+	# for line in night:
+	# 	ret.append(line)
+	# for line in zero:
+	# 	ret.append(line)
+	for line in day:
 		ret.append(line)
 
 	return ret
@@ -85,7 +126,7 @@ def getSqlData():
 		# get the data and sort it.
 		sortedlist = sorted(icresult, key = lambda x: (x[20], int(x[21])))
 		# remove the 00:00 and 21:00 data,we dont need it
-		cleandata = cleanMdData(sortedlist)
+		cleandata = getSortedData(sortedlist)
 		for line  in cleandata:
 			tmp = [line[SQL_DATA],line[SQL_INSTRUMENT],line[SQL_LASTPRICE],
 			line[SQL_VOLUME],line[SQL_TURNONER],line[SQL_OPENINTEREST],line[SQL_TIME],
@@ -105,11 +146,12 @@ def GetMDData(dic):
 	p = Popen(path,stdout = PIPE,bufsize =10000)
 	print "the mdBasic.exe has been  started"
 	print "starting to start the mdBasic.exe"
-	param_dict = {"limit_max_profit":25,"limit_max_loss":10,"rsi_bar_period":100
-				,"limit_rsi_data":80,"rsi_period":10
-				,"band_open_edge":0.5,"band_loss_edge":1,"band_profit_edge":3,"band_period":3600
-				,"volume_open_edge":900,"limit_max_draw_down":0,"multiple":10,"file":file
-				,"sd_lastprice":100,"open_interest_edge":0,"spread":100}
+	param_dict = {"limit_max_profit":25,"limit_max_loss":6,"rsi_bar_period":100
+					,"limit_rsi_data":80,"rsi_period":10,"band_period_begin":7200,"diff_period":1
+					,"band_open_edge":0.5,"band_loss_edge":1,"band_profit_edge":3,"band_period":7200
+					,"volume_open_edge":900,"limit_max_draw_down":0,"multiple":10,"file":file
+					,"sd_lastprice":100,"open_interest_edge":0,"spread":100,"limit_sd":4,"limit_sd_open_edge":1
+					,"limit_sd_close_edge":3}
 
 	# band_and_trigger_obj = band_and_trigger.BandAndTrigger(param_dict)
 	objDict = {}
@@ -118,7 +160,7 @@ def GetMDData(dic):
 		if "SP" in instrumentId:
 			continue
 		if instrumentId not in objDict:
-			objDict[instrumentId] = band_and_trigger.BandAndTrigger(param_dict)
+			objDict[instrumentId] = band_and_trigger.BandAndTrigger(nameDict[instrumentId]["param"])
 		# print instrumentId
 		ret_array = objDict[instrumentId].get_md_data(line)
 		if len(ret_array) ==0:
@@ -137,7 +179,7 @@ def GetMDData(dic):
 			# ret_array = band_and_trigger_obj.get_md_data(line)
 			instrumentId = line[InstrumentID].strip()
 			if instrumentId not in objDict:
-				objDict[instrumentId] = band_and_trigger.BandAndTrigger(param_dict)
+				objDict[instrumentId] = band_and_trigger.BandAndTrigger(nameDict[instrumentId]["param"])
 			# print instrumentId
 			ret_array = objDict[instrumentId].get_md_data(line)
 			if len(ret_array) ==0:
@@ -156,7 +198,7 @@ print "this is the init function. start the mdBasic.exe"
 import socket,sys
 s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 try:
-	s.bind(('127.0.0.1',9000))
+	s.bind(('127.0.0.1',9001))
 	print "this is called  first"
 	if _mdData is None:
 		print "this _mdData is none and start to init it" 

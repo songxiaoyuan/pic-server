@@ -2,20 +2,20 @@
 import math
 import csv
 
-TradingDay = 0
-InstrumentID = 1
-LastPrice = 2
-Volume = 3
-Turnover = 4
-OpenInterest =5
-UpdateTime = 6
-BidPrice1 =7
-AskPrice1 =8
+LASTPRICE = 4
+VOLUME = 11
+OPENINTEREST = 13
+TURNONER = 12
+BIDPRICE1 = 22
+ASKPRICE1 =24
+TIME = 20
 LONG =1
 SHORT =0
 
-def is_band_open_time(direction,lastprice,middle_val,sd_val,open_edge):
+def is_band_open_time(direction,lastprice,middle_val,sd_val,open_edge,limit_sd,limit_sd_open_edge):
 	# this is used to judge is time to band open
+	if sd_val <=limit_sd:
+		open_edge = limit_sd_open_edge
 	if direction ==LONG:
 		upval = middle_val + open_edge*sd_val
 		if lastprice > middle_val and lastprice < upval:
@@ -26,10 +26,10 @@ def is_band_open_time(direction,lastprice,middle_val,sd_val,open_edge):
 			return True
 	return False
 
-def is_band_close_time(direction,lastprice,middle_val,sd_val,open_edge,close_edge,cur_rsi_data,limit_rsi_data,sd_lastprice):
+def is_band_close_time(direction,lastprice,middle_val,sd_val,open_edge,close_edge,cur_rsi_data,limit_rsi_data,limit_sd,limit_sd_close_edge):
 	# this is used to judge is time to band is close time
-	if 10000*(sd_val/lastprice) <=sd_lastprice:
-		return False
+	if sd_val <= limit_sd:
+		open_edge = limit_sd_close_edge
 	if direction ==LONG:
 		profitval = middle_val + close_edge*sd_val
 		lossvla = middle_val - open_edge*sd_val
@@ -58,6 +58,8 @@ def is_trigger_up_time(now_md_price,pre_md_price,spread_edge,multiple):
 		return False
 
 	avg_price = float(diff_turnover)/diff_volume/multiple
+	if pre_md_price[ASKPRICE1] == pre_md_price[BIDPRICE1]:
+		return False
 	tmp = 100*(avg_price - pre_md_price[BIDPRICE1])/(pre_md_price[ASKPRICE1] - pre_md_price[BIDPRICE1])
 	# print str(diff_volume) + " , " + str(diff_turnover) + " , " +str(multiple) + " , " + str(avg_price) 
 	if tmp >= spread_edge:
@@ -81,24 +83,36 @@ def is_trigger_down_time(now_md_price,pre_md_price,spread_edge,multiple):
 	return False
 
 def is_trigger_size_open_time(direction,now_md_price,pre_md_price,volume_open_edge,
-							openinterest_edge,spread_edge,multiple):
+							openinterest_edge,spread_edge,multiple,
+							diff_volume_array,diff_open_interest_array,
+							diff_spread_array,diff_period):
 	# this is used to judge the time of trigger size to open
 	# print now_md_price[VOLUME] - pre_md_price[VOLUME]
-	if now_md_price[VOLUME] - pre_md_price[VOLUME] < volume_open_edge:
-		return False
-	tmp = now_md_price[OPENINTEREST] - pre_md_price[OPENINTEREST]
-	# if tmp >0 and tmp <=openinterest_edge:
+	# if now_md_price[VOLUME] - pre_md_price[VOLUME] < volume_open_edge:
 	# 	return False
-	# if tmp < 0  and (0-tmp) <=openinterest_edge :
+	# tmp = now_md_price[OPENINTEREST] - pre_md_price[OPENINTEREST]
+	# # if tmp >0 and tmp <=openinterest_edge:
+	# # 	return False
+	# # if tmp < 0  and (0-tmp) <=openinterest_edge :
+	# # 	return False
+	# if now_md_price[OPENINTEREST] - pre_md_price[OPENINTEREST] <= openinterest_edge:
 	# 	return False
-	if now_md_price[OPENINTEREST] - pre_md_price[OPENINTEREST] <= openinterest_edge:
+	# # return True
+	# if direction ==LONG:
+	# 	return is_trigger_up_time(now_md_price,pre_md_price,spread_edge,multiple)
+	# elif direction ==SHORT:
+	# 	return is_trigger_down_time(now_md_price,pre_md_price,spread_edge,multiple)
+	# return False
+	ema_diff_volume = get_ema_data_2(diff_volume_array,diff_period)
+	if ema_diff_volume < volume_open_edge:
 		return False
-	# return True
-	if direction ==LONG:
-		return is_trigger_up_time(now_md_price,pre_md_price,spread_edge,multiple)
-	elif direction ==SHORT:
-		return is_trigger_down_time(now_md_price,pre_md_price,spread_edge,multiple)
-	return False
+	ema_diff_openinerest = get_sum(diff_open_interest_array,diff_period)
+	if ema_diff_openinerest < openinterest_edge:
+		return False
+	ema_spread = get_weighted_mean(diff_spread_array,diff_volume_array,diff_period)
+	if ema_spread < spread_edge:
+		return False
+	return True
 
 def is_trigger_size_close_time(direction,now_md_price,pre_md_price,volume_open_edge,
 							openinterest_edge,spread_edge,multiple):
@@ -145,7 +159,7 @@ def get_ma_data(price_array,period):
 
 def get_sd_data(time,price_array,period):
 	# this is used to get the sd data
-	if len(price_array) ==0 or period <=1:
+	if len(price_array) ==0 or period ==0:
 		return 0
 	tmpsum = 0
 	l = len(price_array)
@@ -159,6 +173,17 @@ def get_sd_data(time,price_array,period):
 			tmpsum += (price_array[i]-avg)**2
 	tmpsum = float(tmpsum)/period
 	return math.sqrt(tmpsum)
+
+def get_sd_data_by_map(price_map,period):
+	tmpsum =0
+	for item in price_map:
+		tmpsum = tmpsum + (item*price_map[item])
+	avg = float(tmpsum)/period
+	tmpsum = 0
+	for item in price_map:
+		tmpsum += ((item - avg)* (item - avg)*price_map[item])
+	tmpsum = float(tmpsum)/period
+	return math.sqrt(tmpsum) 
 
 def get_rsi_data(rsi_array,period):
 	# get the current rsi ,the array is the increase and low val
@@ -229,7 +254,79 @@ def is_max_draw_down(direction,cur_price,open_price,multiple,max_profit,limit_ma
 	else:
 		return (False,max_profit)
 
+def get_sum(num_array,period):
+	ret = 0
+	l = len(num_array)
+	for i in xrange(l-1,-1,-1):
+		if i >= (l - period):
+			ret +=num_array[i]
+	return ret
 
+def get_weighted_mean(target_array,weight_array,period):
+	if len(target_array) != len(weight_array):
+		print "basic_fun.py: the target array is not == weight array"
+		return 0
+	l = len(target_array)
+	total_sum = 0
+	weight_sum = 0
+	for i in xrange(l-1,-1,-1):
+		if i >= (l - period):
+			total_sum += (target_array[i]*weight_array[i])
+			weight_sum += weight_array[i]
+	if total_sum ==0 or weight_sum ==0:
+		return 0
+	return float(total_sum)/weight_sum
+
+def write_config_info(pre_ema_val,lastprice_array,rsi_array,rsi_array_period,pre_rsi_lastprice,config_path):
+	config_file = open(config_path,"w")
+	line1 = "pre_ema_val:,"+str(pre_ema_val)
+	line2 = "lastpricearray:"
+	for i in lastprice_array:
+		line2 = line2 + ","+str(i)
+	line3 = "rsiarray:"
+	for i in xrange(len(rsi_array)-rsi_array_period,len(rsi_array)):
+		line3 = line3 + "," + str(rsi_array[i])
+	line4 = "pre_rsi_val:,"+str(pre_rsi_lastprice)
+	write_lines = [line1+'\n',line2+'\n',line3+'\n',line4+'\n']
+	config_file.writelines(write_lines)
+	config_file.close()
+
+def get_config_info(pre_ema_val_array,lastprice_array,lastprice_dic
+	,rsi_array,rsi_pre_lastprice_array,config_path):
+	try:
+		config_file = open(config_path)
+	except Exception as e:
+		config_file = open(config_path,"w")
+		return
+	config_file = open(config_path)
+	lines = config_file.readlines()
+	for line in lines:
+		if "pre_ema_val" in line:
+			print "this is pre_ema_val"
+			line = line.split(',')
+			pre_ema_val_array.append(float(line[1].strip()))
+		elif "lastpricearray" in line:
+			print "this is lastprice array"
+			line = line.split(',')[1:]
+			for tmp in line:
+				tmp = float(tmp.strip())
+				if tmp not in lastprice_dic:
+					lastprice_dic[tmp] =1
+				else:
+					lastprice_dic[tmp] +=1
+				lastprice_array.append(tmp)
+			# print "the length of lastprice is: " + str(len(lastprice_array))
+		elif "rsiarray" in line:
+			print "this is rsiarray"
+			line = line.split(',')[1:]
+			for tmp in line:
+				rsi_array.append(float(tmp.strip()))
+		elif "pre_rsi_val" in line:
+			print "this is the pre rsi lastprice"
+			rsi_pre_lastprice_array.append(float(line.split(',')[1].strip()))
+		else:
+			print "this is not the config line"
+	config_file.close()
 
 if __name__=='__main__': 
 	print "this is basic fun like c++ so"

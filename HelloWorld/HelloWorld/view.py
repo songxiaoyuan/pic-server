@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 import json
 import random
-# import getMdData
+import getMdData
 import getMACDData
 
 # print "this is in view"
