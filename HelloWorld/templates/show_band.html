@@ -49,7 +49,8 @@
         ema_diff_volume_array =[]
 
 
-
+         var instrumentid = "{{ instrumentid|safe }}"
+         var today = "{{ today|safe }}"
 
         band_option = {
             toolbox: {
@@ -66,7 +67,7 @@
                 trigger: 'axis'
             },
             title: {
-                text: 'bollinger band'
+                text: instrumentid+"_"+today
             },
             legend: {
                 // data:['邮件营销','联盟广告','视频广告','直接访问','搜索引擎']
@@ -97,7 +98,7 @@
                 trigger: 'axis'
             },
             title: {
-                text: 'rsi'
+                text: instrumentid+"_"+today+'_rsi'
             },
             legend: {
                 data:['rsi']
@@ -117,7 +118,7 @@
             ]         
         };
 
-        var instrumentid = "{{ instrumentid|safe }}"
+       
 
         window.onload = function(){
             //页面加载即执行函数

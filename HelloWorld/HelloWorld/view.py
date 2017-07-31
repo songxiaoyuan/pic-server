@@ -5,6 +5,7 @@ import json
 import random
 import getMdData
 import getMACDData
+import time
 
 # print "this is in view"
 # print id(test._g)
@@ -65,6 +66,7 @@ def UpdateMdData(request):
         # print instrumentid
         ret = {}
         ret["instrumentid"] = instrumentid
+        ret["today"] = time.strftime('%Y%m%d',time.localtime(time.time()))
         return render(request,'show_band.html',ret)
     if request.method == 'POST':
         # this is the ajax ,return the dict data
