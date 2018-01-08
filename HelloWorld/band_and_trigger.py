@@ -13,136 +13,83 @@ AskPrice1 =8
 LONG =1
 SHORT =0
 
+nameDict = {
+	"rb":1,
+	"ru":5,
+	"zn":5,
+	"cu":10,
+	"hc":1,
+	"ni":10,
+	"al":5,
+	"au":0.05,
+	"ag":1,
+	"pp":1,
+	"v":5,
+	"bu":2,
+	"pb":5
+}
+
+
 class BandAndTrigger(object):
 	"""docstring for BandAndTrigger"""
-	def __init__(self,param_dic):
+	def __init__(self,instrument_id):
 		super(BandAndTrigger, self).__init__()
 		# self.arg = arg
-		self._pre_md_price = []
-		self._now_md_price = []
-		self._lastprice_array = []
-		self._pre_ema_val = 0
-		self._now_middle_value =0
-		self._now_sd_val = 0
+		self._total_max_lastprice = 0
+		self._total_min_lastprice = 0
 
-		self._max_profit = 0
-		self._limit_max_draw_down = param_dic["limit_max_draw_down"]
-		self._limit_max_profit = param_dic["limit_max_profit"]
-		self._limit_max_loss = param_dic["limit_max_loss"]
+		self._day_max_lastprice = 0
+		self._day_min_lastprice = 0
 
-		self._multiple = param_dic["multiple"]
-
-		self._rsi_array = []
-		self._rsi_period = param_dic["rsi_period"]
-		self._pre_rsi_lastprice =0 
-		self._now_bar_rsi_tick = 0
-		self._rsi_bar_period = param_dic["rsi_bar_period"]
-		self._limit_rsi_data = param_dic["limit_rsi_data"]
+		self._tick = nameDict[instrument_id[0:2]]
 
 
-		# self._limit_twice_sd = 2
+	def is_day(self,time):
+		nightBegin = 21*3600
+		nightEnd = 23*3600+59*60+60
+		zeroBegin = 0
+		zeroEnd = 9*3600 - 100
+		dayBegin = 9*3600
+		dayEnd = 15*3600
 
-		self._moving_theo = "EMA"
-		# now we have the cangwei and the limit cangwei
-		self._now_interest = 0
-		self._limit_interest = 1
+		timeLine = time.split(":")
+			# print timeLine
+		try:
+			nowTime = int(timeLine[0])*3600+int(timeLine[1])*60+int(timeLine[2])
+		except Exception as e:
+			nowTime = 0
 
-		# band param
-		self._param_open_edge = param_dic["band_open_edge"]
-		self._param_loss_edge = param_dic["band_loss_edge"]
-		self._param_close_edge =param_dic["band_profit_edge"]
-		self._param_period = param_dic["band_period"]
-		
-		# if the sd is too small like is smaller than _param_limit_sd_value,
-		# the open edge and close edge will bigger 
-		# self._param_limit_sd_value = limit_sd_val
-		# self._param_limit_bigger = 0
-
-		# trigger param
-		self._param_volume_open_edge = param_dic["volume_open_edge"]
-		self._param_open_interest_edge = param_dic["open_interest_edge"]
-		self._param_spread = param_dic["spread"]
-
-		self._open_lastprice = 0
-		self._profit = 0
-		self._ris_data = 0
-
-		self._sd_lastprice = param_dic["sd_lastprice"]
-
-		self._file = param_dic["file"]
-
+		if nowTime >= zeroBegin and nowTime <zeroEnd:
+			return False
+		elif nowTime >= dayBegin and nowTime <= dayEnd:
+			return True
+		elif nowTime >=nightBegin and nowTime <=nightEnd:
+			return False
 
 	# get the md data ,every line;
 	def get_md_data(self,md_array):
 		# tranfer the string to float
-		md_array[LastPrice] = float(md_array[LastPrice])
-		md_array[Volume] = float(md_array[Volume])
-		md_array[OpenInterest] = float(md_array[OpenInterest])
-		md_array[Turnover] = float(md_array[Turnover])
-		md_array[BidPrice1] = float(md_array[BidPrice1])
-		md_array[AskPrice1] = float(md_array[AskPrice1])
+		lastprice = float(md_array[LastPrice])
 
-
-		self._pre_md_price = self._now_md_price
-		self._now_md_price = md_array
-
-		lastprice = self._now_md_price[LastPrice]
-		self._lastprice_array.append(lastprice)
-		# print lastprice
-
-		if len(self._pre_md_price) ==0:
-			self._rsi_array.append(0)
-			self._pre_rsi_lastprice = lastprice
-			self._ris_data = -1
-			# self._rsi_array.append(0)
+		is_day_now = self.is_day(md_array[UpdateTime])
+		if is_day_now == True:
+			if self._total_min_lastprice ==0 or self._total_min_lastprice > lastprice:
+				self._total_min_lastprice = lastprice
+			if self._total_max_lastprice ==0  or self._total_max_lastprice < lastprice:
+				self._total_max_lastprice = lastprice
+			if self._day_min_lastprice ==0 or self._day_min_lastprice > lastprice:
+				self._day_min_lastprice = lastprice
+			if self._day_max_lastprice ==0  or self._day_max_lastprice < lastprice:
+				self._day_max_lastprice = lastprice
 		else:
-			# self._rsi_array.append(lastprice - self._pre_md_price[LASTPRICE])
-			if self._now_bar_rsi_tick >= self._rsi_bar_period:
-				# 表示已经到了一个bar的周期。
-				tmpdiff = lastprice - self._pre_rsi_lastprice		
-				self._pre_rsi_lastprice = lastprice
-				self._now_bar_rsi_tick = 1
-				self._ris_data =bf.get_rsi_data2(tmpdiff,self._rsi_array,self._rsi_period)
-				self._rsi_array.append(tmpdiff)
-			else:
-				self._now_bar_rsi_tick +=1
-				tmpdiff = lastprice - self._pre_rsi_lastprice
-				self._ris_data =bf.get_rsi_data2(tmpdiff,self._rsi_array,self._rsi_period)
-				# self._ris_data = 0
-
-		if len(self._lastprice_array)-1 < self._param_period:
-			# this is we dont start the period.
-			ema_period = len(self._lastprice_array)
-			pre_ema_val = bf.get_ema_data(lastprice,self._pre_ema_val,ema_period)
-			self._pre_ema_val = pre_ema_val
-			self._now_sd_val =bf.get_sd_data(self._now_md_price[UpdateTime], self._lastprice_array,ema_period)
-			# save the pre_ema_val and return
-			# return True
-			# ret = [self._now_md_price[LastPrice],self._pre_ema_val,self._now_sd_val,self._now_md_price[UpdateTime],self._ris_data]
-			# return ret
-			return []
-
-		# start the judge
-		if self._moving_theo =="EMA":
-			self._now_middle_value = bf.get_ema_data(lastprice,self._pre_ema_val,self._param_period)
-			self._pre_ema_val = self._now_middle_value
-		else:
-			self._now_middle_value = bf.get_ma_data(self._lastprice_array,self._param_period)
+			if self._total_min_lastprice ==0 or self._total_min_lastprice > lastprice:
+				self._total_min_lastprice = lastprice
+			if self._total_max_lastprice ==0  or self._total_max_lastprice < lastprice:
+				self._total_max_lastprice = lastprice
 		
-		self._now_sd_val =bf.get_sd_data(self._now_md_price[UpdateTime],self._lastprice_array,self._param_period)	
-		
-		# diff_volume = self._now_md_price[VOLUME] - self._pre_md_price[VOLUME]
-		# diff_openinterest = self._now_md_price[OPENINTEREST] - self._pre_md_price[OPENINTEREST]
-
-		# # self.f.write(str(self._now_md_price[TIME])+","+str(lastprice)+","+str(self._now_middle_value)+","+str(self._now_sd_val)+","+str(self._ris_data)+"\n")
-		# diff_turnover = self._now_md_price[TURNONER] - self._pre_md_price[TURNONER]
-
-		# avg_price = float(diff_turnover)/diff_volume/self._multiple
-		# spread = 100*(self._pre_md_price[ASKPRICE1] - avg_price)/(self._pre_md_price[ASKPRICE1] - self._pre_md_price[BIDPRICE1])
-
-
-		ret = [self._now_md_price[LastPrice],self._now_middle_value
-				,self._now_sd_val,self._now_md_price[UpdateTime],self._ris_data]
+		total_range = (self._total_max_lastprice - self._total_min_lastprice)/self._tick
+		day_range = (self._day_max_lastprice - self._day_min_lastprice)/self._tick
+		ret = [total_range,day_range]
 		return ret
 
 

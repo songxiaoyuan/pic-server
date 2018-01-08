@@ -11,25 +11,99 @@
 <br>
 <br>
 
-<div id="urlButtonS_div" style="float: left;width: 200px;height: 1000px"></div>
+<div id="urlButtonS_div" style="float: left;width: 700px;height: 1000px"></div>
 
 <script type="text/javascript">
+
+    var limit_rang_dic = {
+        "rb1805":{"total_limit":101,"day_limit":81},
+        "al1803":{"total_limit":50,"day_limit":41},
+        "ni1805":{"total_limit":234,"day_limit":126},
+        "hc1805":{"total_limit":114,"day_limit":83},
+        "ru1805":{"total_limit":103,"day_limit":55},
+        "pb1802":{"total_limit":91,"day_limit":56},
+        "pp1805":{"total_limit":168,"day_limit":168},
+        "v1805":{"total_limit":29,"day_limit":29},
+        "zn1803":{"total_limit":103,"day_limit":64},
+        "bu1806":{"total_limit":27,"day_limit":19},
+        "cu1803":{"total_limit":79,"day_limit":48}
+    }
+
     var data = {{ data|safe }}
     for(var tmp in data){
-    	var url_a = $('<a>',{
-    		'target':'_blank',
-    		'href':"http://127.0.0.1:8000/update/?instrumentid="+tmp
+    	var div_tmp = $('<div>',{
+    		'width':'1000px',
+            'height':'150px',
+            "id":tmp
     	});
     	var a_button = $("<button>",{
     		'width':'200px',
     		'height':'100px',
+            "id":tmp+"1",
     		'text':tmp
     	})
-    	url_a.append(a_button)
-    	$("#urlButtonS_div").append(url_a)
+        var total_div = $("<button>",{
+            'width':'150px',
+            'height':'100px',
+             "id":tmp+"2",
+        })
+        var total_limit_div = $("<button>",{
+            'width':'150px',
+            'height':'100px',
+            "id":tmp+"3",
+            'text':limit_rang_dic[tmp]["total_limit"]
+        })
+        var day_div = $("<button>",{
+            'width':'150px',
+            'height':'100px',
+            "id":tmp+"4",
+        })
+        var day_limit_div = $("<button>",{
+            'width':'150px',
+            'height':'100px',
+            "id":tmp+"5",
+            'text':limit_rang_dic[tmp]["day_limit"]
+        })
+    	div_tmp.append(a_button)
+        div_tmp.append(total_div)
+        div_tmp.append(total_limit_div)
+        div_tmp.append(day_div)
+        div_tmp.append(day_limit_div)
+    	$("#urlButtonS_div").append(div_tmp)
     	$("#urlButtonS_div").append('<br>')
     	// console.log(tmp)
     	// console.log(data[tmp])
+
+
+        window.onload = function(){
+            //页面加载即执行函数
+            UpdateData();
+        }
+
+
+        function UpdateData(){
+            $.ajax({
+                url:'/update/',
+                type:'POST',
+                data:{'instrumentid':"all"},
+                dataType:'json',
+                success:function(data){
+                    // document.getElementById("mynum").value=data.returnnum;
+                    startdraw(data["data"])
+                }
+            })
+            window.setTimeout("UpdateData()", 10000); 
+        }
+
+
+        function startdraw(data){
+            for (var instrumentid in data) {
+
+                $("#"+instrumentid+"2").text(data[instrumentid][0])
+                $("#"+instrumentid+"4").text(data[instrumentid][0])
+
+            }
+        }
     }
 </script>
 

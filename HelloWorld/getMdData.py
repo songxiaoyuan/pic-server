@@ -32,33 +32,6 @@ SQL_DATA = 0
 SQL_INSTRUMENT = 1
 
 
-def cleanMdData(data):
-	ret = []
-	amBegin = 9*3600
-	amEnd = 11*3600+30*60
-	pmBegin = 13*3600+30*60
-	pmEnd = 15*3600
-	amRestBegin = 10*3600+15*60
-	amRestEnd = 10*3600+30*60
-
-	for line in data:
-		# print line
-		timeLine = line[20].split(":")
-		# print timeLine
-		# tick = line[21]
-		nowTime = int(timeLine[0])*3600+int(timeLine[1])*60+int(timeLine[2])
-		# print nowTime
-		# print time
-		# import pdb
-		# pdb.set_trace()
-		if nowTime<amBegin:
-			continue
-		if nowTime>pmEnd:
-			break
-		ret.append(line)
-
-	return ret
-
 def getInstrumentsIds():
 	for line in open("config.txt"):
 		line = line.strip().split(" ")
@@ -76,8 +49,7 @@ def getSqlData():
 	conn = cx_Oracle.connect('hq','hq','114.251.16.210:9921/quota')    
 	cursor = conn.cursor () 
 	for instrumentId in instrumentsids_array:
-		mysql="select *from hyqh.quotatick where TRADINGDAY = '%s' AND instr(INSTRUMENTID,'%s')>0" % (date,instrumentId)
-
+		mysql="select *from hyqh.quotatick where TRADINGDAY = '%s' AND INSTRUMENTID = '%s' " % (date,instrumentId)
 		print mysql
 		cursor.execute (mysql)  
 
@@ -85,8 +57,7 @@ def getSqlData():
 		# get the data and sort it.
 		sortedlist = sorted(icresult, key = lambda x: (x[20], int(x[21])))
 		# remove the 00:00 and 21:00 data,we dont need it
-		cleandata = cleanMdData(sortedlist)
-		for line  in cleandata:
+		for line  in sortedlist:
 			tmp = [line[SQL_DATA],line[SQL_INSTRUMENT],line[SQL_LASTPRICE],
 			line[SQL_VOLUME],line[SQL_TURNONER],line[SQL_OPENINTEREST],line[SQL_TIME],
 			line[SQL_BIDPRICE1],line[SQL_ASKPRICE1],]
@@ -105,11 +76,6 @@ def GetMDData(dic):
 	p = Popen(path,stdout = PIPE,bufsize =10000)
 	print "the mdBasic.exe has been  started"
 	print "starting to start the mdBasic.exe"
-	param_dict = {"limit_max_profit":25,"limit_max_loss":10,"rsi_bar_period":100
-				,"limit_rsi_data":80,"rsi_period":10
-				,"band_open_edge":0.5,"band_loss_edge":1,"band_profit_edge":3,"band_period":3600
-				,"volume_open_edge":900,"limit_max_draw_down":0,"multiple":10,"file":file
-				,"sd_lastprice":100,"open_interest_edge":0,"spread":100}
 
 	# band_and_trigger_obj = band_and_trigger.BandAndTrigger(param_dict)
 	objDict = {}
@@ -118,15 +84,14 @@ def GetMDData(dic):
 		if "SP" in instrumentId:
 			continue
 		if instrumentId not in objDict:
-			objDict[instrumentId] = band_and_trigger.BandAndTrigger(param_dict)
+			objDict[instrumentId] = band_and_trigger.BandAndTrigger(instrumentId)
 		# print instrumentId
 		ret_array = objDict[instrumentId].get_md_data(line)
 		if len(ret_array) ==0:
 			continue
-		if instrumentId in dic:
-			dic[instrumentId].append(ret_array)
-		else:
-			dic[instrumentId] = [ret_array]
+		if instrumentId  not in dic:
+			dic[instrumentId] = ret_array
+		dic[instrumentId] = ret_array
 
 	print "the sql data has been caculated!"
 	for line in iter(p.stdout.readline,''):
@@ -137,15 +102,15 @@ def GetMDData(dic):
 			# ret_array = band_and_trigger_obj.get_md_data(line)
 			instrumentId = line[InstrumentID].strip()
 			if instrumentId not in objDict:
-				objDict[instrumentId] = band_and_trigger.BandAndTrigger(param_dict)
+				objDict[instrumentId] = band_and_trigger.BandAndTrigger(instrumentId)
 			# print instrumentId
 			ret_array = objDict[instrumentId].get_md_data(line)
 			if len(ret_array) ==0:
 				continue
-			if instrumentId in dic:
-				dic[instrumentId].append(ret_array)
-			else:
-				dic[instrumentId] = [ret_array]
+			if instrumentId  not in dic:
+				dic[instrumentId] = ret_array
+			dic[instrumentId] = ret_array
+
 	p.stdout.close()
 	p.terminate()
 

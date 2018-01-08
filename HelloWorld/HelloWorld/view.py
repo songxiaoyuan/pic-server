@@ -54,16 +54,17 @@ def UpdateMdData(request):
         # print instrumentid
         ret = {}
         ret["instrumentid"] = instrumentid
-        return render(request,'show_band.html',ret)
+        return render(request,'index.html',ret)
     if request.method == 'POST':
         # this is the ajax ,return the dict data
         ret = {'data':""}
         # print "this is post"
         instrument = request.POST.get('instrumentid').decode("utf-8")
-        print instrument
+        # print instrument
         if getMdData._mdData ==None:
             print "the md data is  none, please find the reason"
-        elif instrument in getMdData._mdData:
-            ret["data"] = getMdData._mdData[instrument]
+        else:
+            # print getMdData._mdData
+            ret["data"] = getMdData._mdData
         return HttpResponse(json.dumps(ret))
-    return render(request,'show_band.html')
+    return render(request,'index.html')
