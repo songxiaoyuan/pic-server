@@ -33,7 +33,7 @@
     for(var tmp in data){
     	var div_tmp = $('<div>',{
     		'width':'1000px',
-            'height':'150px',
+            'height':'100px',
             "id":tmp
     	});
     	var a_button = $("<button>",{
@@ -100,7 +100,7 @@
             for (var instrumentid in data) {
 
                 $("#"+instrumentid+"2").text(data[instrumentid][0])
-                $("#"+instrumentid+"4").text(data[instrumentid][0])
+                $("#"+instrumentid+"4").text(data[instrumentid][1])
 
             }
         }

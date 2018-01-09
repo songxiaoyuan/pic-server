@@ -14,19 +14,19 @@ LONG =1
 SHORT =0
 
 nameDict = {
-	"rb":1,
-	"ru":5,
-	"zn":5,
-	"cu":10,
-	"hc":1,
-	"ni":10,
-	"al":5,
-	"au":0.05,
-	"ag":1,
-	"pp":1,
-	"v":5,
-	"bu":2,
-	"pb":5
+	"rb1805":1,
+	"ru1805":5,
+	"zn1803":5,
+	"cu1803":10,
+	"hc1805":1,
+	"ni1805":10,
+	"al1803":5,
+	"au1806":0.05,
+	"ag1806":1,
+	"pp1805":1,
+	"v1805":5,
+	"bu1806":2,
+	"pb1802":5
 }
 
 
@@ -41,7 +41,8 @@ class BandAndTrigger(object):
 		self._day_max_lastprice = 0
 		self._day_min_lastprice = 0
 
-		self._tick = nameDict[instrument_id[0:2]]
+		self._tick = nameDict[instrument_id]
+
 
 
 	def is_day(self,time):
