@@ -101,6 +101,8 @@ def GetMDData(dic):
 
 			# ret_array = band_and_trigger_obj.get_md_data(line)
 			instrumentId = line[InstrumentID].strip()
+			line[len(line)-1] = line[len(line)-1].strip()
+			# print instrumentId
 			if instrumentId not in objDict:
 				objDict[instrumentId] = band_and_trigger.BandAndTrigger(instrumentId)
 			# print instrumentId
@@ -110,6 +112,7 @@ def GetMDData(dic):
 			if instrumentId  not in dic:
 				dic[instrumentId] = ret_array
 			dic[instrumentId] = ret_array
+	print "this is the GetMDData over"
 
 	p.stdout.close()
 	p.terminate()
